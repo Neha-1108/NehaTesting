@@ -38,7 +38,7 @@ time.sleep(5)
 driver.quit()
 """
 
-from selenium import webdriver
+"""from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -73,6 +73,59 @@ driver.execute_script("arguments[0].scrollIntoView();", shopify_payouts)
 shopify_payouts.click()
 
 # Optionally, wait for navigation to the Payouts page
+WebDriverWait(driver, 10).until(EC.url_contains("shopify-payouts"))
+
+print("✅ Successfully navigated to Shopify Payouts!")
+
+# Close the browser
+driver.quit()
+"""
+
+import os
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+# Setup WebDriver
+options = webdriver.ChromeOptions()
+options.add_argument('--headless')  # Uncomment for headless mode
+driver = webdriver.Chrome(options=options)
+
+# Environment variables for credentials (secure storage)
+email = "neha@satvasolutions.com"
+password = os.getenv("SYNC_TOOLS_PASSWORD")  # Replace with your actual environment variable
+
+if not password:
+    raise ValueError("Password environment variable is not set!")
+
+# Open SyncTools login page
+driver.get("https://app.synctools.io/sign-in")
+
+# Wait for the page to load and email field to be visible
+WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "email")))
+
+# Enter email
+driver.find_element(By.ID, "email").send_keys(email)
+
+# Enter password
+driver.find_element(By.ID, "basic_password").send_keys(password)
+
+# Click Sign-In button
+driver.find_element(By.XPATH, "//button[span[text()='Sign in']]").click()
+
+# Wait for the Shopify Payouts menu item to be clickable
+WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "ant-menu-item")))
+
+# Find and click the Shopify Payouts menu item
+shopify_payouts = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.XPATH, "//li[contains(@data-menu-id, 'shopify-payouts')]"))
+)
+
+driver.execute_script("arguments[0].scrollIntoView();", shopify_payouts)
+shopify_payouts.click()
+
+# Wait for navigation to complete
 WebDriverWait(driver, 10).until(EC.url_contains("shopify-payouts"))
 
 print("✅ Successfully navigated to Shopify Payouts!")
