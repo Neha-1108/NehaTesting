@@ -27,7 +27,7 @@ def test_login():
     button.click()
 
     # Wait for login to complete
-    time.sleep(10)
+    time.sleep(8)
 
     # Optionally, close the browser
     driver.quit()
