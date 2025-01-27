@@ -1,0 +1,44 @@
+on:
+    push:
+      branches:
+        - master  # Trigger the workflow when code is pushed to the master branch
+    pull_request:
+      branches:
+        - master  # Trigger the workflow for pull requests targeting the master branch
+ 
+jobs:
+    test:
+      runs-on: ubuntu-latest
+  
+      steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2  # This is necessary to get your code from the repo
+  
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11.3'  # Specify the Python version you are using
+  
+      - name: Install dependencies
+        run: |
+          sudo apt-get update  # Update package lists
+          sudo apt-get install -y google-chrome-stable  # Install Google Chrome
+          sudo apt-get install -y chromium-chromedriver  # Install ChromeDriver
+          pip install -r requirements.txt  # Install dependencies from your requirements file
+          pip install allure-pytest  # Ensure allure-pytest is installed for generating reports
+  
+      - name: Run tests with Pytest
+        run: |
+          pytest --alluredir=allure-results  # Run tests and generate Allure results
+  
+      - name: Upload Allure results
+        uses: actions/upload-artifact@v3  # Upload the test results as artifacts (v3)
+        with:
+          name: allure-results
+          path: allure-results  # Upload the allure-results directory containing the test results
+  
+      - name: Generate Allure Report (Optional - if needed on GitHub Actions)
+        run: |
+          pip install allure-commandline  # Install allure command line tools
+          allure serve allure-results  # Generate and serve the Allure report in the GitHub Actions runner (optional)
+  
