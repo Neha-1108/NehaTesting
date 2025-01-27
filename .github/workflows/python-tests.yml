@@ -24,13 +24,19 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements.txt  # Install dependencies from your requirements file
+        pip install allure-pytest  # Ensure allure-pytest is installed for generating reports
 
     - name: Run tests with Pytest
       run: |
         pytest --alluredir=allure-results  # Run tests and generate Allure results
 
     - name: Upload Allure results
-      uses: actions/upload-artifact@v3  # Updated to v3
+      uses: actions/upload-artifact@v3  # Upload the test results as artifacts (v3)
       with:
         name: allure-results
-        path: allure-results  # Upload the test results as artifacts
+        path: allure-results  # Upload the allure-results directory containing the test results
+
+    - name: Generate Allure Report (Optional - if needed on GitHub Actions)
+      run: |
+        pip install allure-commandline  # Install allure command line tools
+        allure serve allure-results  # Generate and serve the Allure report in the GitHub Actions runner (optional)
