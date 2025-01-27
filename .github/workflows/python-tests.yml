@@ -3,10 +3,10 @@ name: Run Selenium Tests
 on:
   push:
     branches:
-      - master  # You can specify other branches if needed
+      - master  # Trigger the workflow when code is pushed to the master branch
   pull_request:
     branches:
-      - master
+      - master  # Trigger the workflow for pull requests targeting the master branch
 
 jobs:
   test:
@@ -14,7 +14,7 @@ jobs:
 
     steps:
     - name: Check out the repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2  # This is necessary to get your code from the repo
 
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -23,14 +23,14 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt  # Assuming your requirements are in requirements.txt
+        pip install -r requirements.txt  # Install dependencies from your requirements file
 
     - name: Run tests with Pytest
       run: |
-        pytest --alluredir=allure-results  # Run your tests and generate Allure results
+        pytest --alluredir=allure-results  # Run tests and generate Allure results
 
     - name: Upload Allure results
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3  # Updated to v3
       with:
         name: allure-results
-        path: allure-results
+        path: allure-results  # Upload the test results as artifacts
