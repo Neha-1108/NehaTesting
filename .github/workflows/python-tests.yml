@@ -1,0 +1,36 @@
+name: Run Selenium Tests
+
+on:
+  push:
+    branches:
+      - master  # You can specify other branches if needed
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11.3'  # Specify the Python version you are using
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt  # Assuming your requirements are in requirements.txt
+
+    - name: Run tests with Pytest
+      run: |
+        pytest --alluredir=allure-results  # Run your tests and generate Allure results
+
+    - name: Upload Allure results
+      uses: actions/upload-artifact@v2
+      with:
+        name: allure-results
+        path: allure-results
