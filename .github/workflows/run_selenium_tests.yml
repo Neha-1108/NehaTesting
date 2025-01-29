@@ -1,4 +1,6 @@
-name: Run Selenium Tests
+env:
+  SYNC_TOOLS_EMAIL: ${{ secrets.SYNC_TOOLS_EMAIL }}
+  SYNC_TOOLS_PASSWORD: ${{ secrets.SYNC_TOOLS_PASSWORD }}
 
 on:
   push:
@@ -34,24 +36,3 @@ jobs:
       run: |
         pip install -r requirements.txt
         pip install allure-pytest
-
-    - name: Run tests with Pytest
-      run: |
-        pytest --alluredir=allure-results
-
-    - name: Upload Allure results
-      uses: actions/upload-artifact@v3
-      with:
-        name: allure-results
-        path: allure-results
-
-    - name: Generate Allure Report (Optional)
-      run: |
-        pip install allure-commandline
-        allure generate allure-results -o allure-report --clean
-
-    - name: Upload Allure Report
-      uses: actions/upload-artifact@v3
-      with:
-        name: allure-report
-        path: allure-report
