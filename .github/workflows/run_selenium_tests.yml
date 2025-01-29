@@ -19,30 +19,25 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.11'  # No need for patch version, always picks the latest 3.11.x
+        python-version: '3.11.3'
 
     - name: Install Chrome and ChromeDriver
       run: |
         sudo apt-get update
         sudo apt-get install -y wget curl unzip
         sudo apt-get install -y google-chrome-stable
-        CHROME_VERSION=$(google-chrome-stable --version | grep -oP '[0-9]+\.[0-9]+\.[0-9]+')
-        wget -q "https://chromedriver.storage.googleapis.com/$CHROME_VERSION/chromedriver_linux64.zip"
-        unzip chromedriver_linux64.zip
-        sudo mv chromedriver /usr/local/bin/
-        chmod +x /usr/local/bin/chromedriver
-        chromedriver --version  # Verify installation
+        CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
+        echo "Chrome version: $CHROME_VERSION"
+        sudo apt-get install -y chromium-chromedriver || sudo apt-get install -y chromedriver
 
     - name: Install dependencies
       run: |
-        pip install --upgrade pip
         pip install -r requirements.txt
         pip install allure-pytest
 
     - name: Run tests with Pytest
       run: |
         pytest --alluredir=allure-results
-      continue-on-error: false  # Stops workflow on test failures
 
     - name: Upload Allure results
       uses: actions/upload-artifact@v3
@@ -51,7 +46,6 @@ jobs:
         path: allure-results
 
     - name: Generate Allure Report (Optional)
-      if: always()  # Runs even if tests fail
       run: |
         pip install allure-commandline
         allure generate allure-results -o allure-report --clean
