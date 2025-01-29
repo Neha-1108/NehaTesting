@@ -1,44 +1,63 @@
+name: Run Selenium Tests
+
 on:
-    push:
-      branches:
-        - master  # Trigger the workflow when code is pushed to the master branch
-    pull_request:
-      branches:
-        - master  # Trigger the workflow for pull requests targeting the master branch
- 
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
 jobs:
-    test:
-      runs-on: ubuntu-latest
-  
-      steps:
-      - name: Check out the repository
-        uses: actions/checkout@v2  # This is necessary to get your code from the repo
-  
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.11.3'  # Specify the Python version you are using
-  
-      - name: Install dependencies
-        run: |
-          sudo apt-get update  # Update package lists
-          sudo apt-get install -y google-chrome-stable  # Install Google Chrome
-          sudo apt-get install -y chromium-chromedriver  # Install ChromeDriver
-          pip install -r requirements.txt  # Install dependencies from your requirements file
-          pip install allure-pytest  # Ensure allure-pytest is installed for generating reports
-  
-      - name: Run tests with Pytest
-        run: |
-          pytest --alluredir=allure-results  # Run tests and generate Allure results
-  
-      - name: Upload Allure results
-        uses: actions/upload-artifact@v3  # Upload the test results as artifacts (v3)
-        with:
-          name: allure-results
-          path: allure-results  # Upload the allure-results directory containing the test results
-  
-      - name: Generate Allure Report (Optional - if needed on GitHub Actions)
-        run: |
-          pip install allure-commandline  # Install allure command line tools
-          allure serve allure-results  # Generate and serve the Allure report in the GitHub Actions runner (optional)
-  
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'  # No need for patch version, always picks the latest 3.11.x
+
+    - name: Install Chrome and ChromeDriver
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget curl unzip
+        sudo apt-get install -y google-chrome-stable
+        CHROME_VERSION=$(google-chrome-stable --version | grep -oP '[0-9]+\.[0-9]+\.[0-9]+')
+        wget -q "https://chromedriver.storage.googleapis.com/$CHROME_VERSION/chromedriver_linux64.zip"
+        unzip chromedriver_linux64.zip
+        sudo mv chromedriver /usr/local/bin/
+        chmod +x /usr/local/bin/chromedriver
+        chromedriver --version  # Verify installation
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install allure-pytest
+
+    - name: Run tests with Pytest
+      run: |
+        pytest --alluredir=allure-results
+      continue-on-error: false  # Stops workflow on test failures
+
+    - name: Upload Allure results
+      uses: actions/upload-artifact@v3
+      with:
+        name: allure-results
+        path: allure-results
+
+    - name: Generate Allure Report (Optional)
+      if: always()  # Runs even if tests fail
+      run: |
+        pip install allure-commandline
+        allure generate allure-results -o allure-report --clean
+
+    - name: Upload Allure Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: allure-report
+        path: allure-report
