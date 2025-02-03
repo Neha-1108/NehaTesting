@@ -1,30 +1,30 @@
-env:
-  SYNC_TOOLS_EMAIL: ${{ secrets.SYNC_TOOLS_EMAIL }}
-  SYNC_TOOLS_PASSWORD: ${{ secrets.SYNC_TOOLS_PASSWORD }}
+name: Run Selenium Tests
 
 on:
   push:
     branches:
-      - master
+      - master  # Trigger workflow on push to the master branch
   pull_request:
     branches:
-      - master
+      - master  # Trigger workflow on pull requests to the master branch
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Use the latest Ubuntu environment
 
     steps:
     - name: Check out the repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2  # Checkout the repository
 
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.11.3'
+        python-version: '3.11.3'  # Set the Python version to 3.11.3
 
-    - name: Install Chrome and ChromeDriver
+    - name: Set environment variables
       run: |
+        echo "SYNC_TOOLS_EMAIL=${{ secrets.SYNC_TOOLS_EMAIL }}" >> $GITHUB_ENV
+        echo "SYNC_TOOLS_PASSWORD=${{ secrets.SYNC_TOOLS_PASSWORD }}" >> $GITHUB_ENV
         sudo apt-get update
         sudo apt-get install -y wget curl unzip
         sudo apt-get install -y google-chrome-stable
@@ -34,5 +34,10 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt
-        pip install allure-pytest
+        pip install --upgrade pip
+        pip install -r requirements.txt  # Install dependencies listed in requirements.txt
+        pip install allure-pytest  # Install allure-pytest for generating reports
+
+    - name: Run Selenium Tests
+      run: |
+        pytest SyncToolsQBO/test_Configuration.py  # Run your specific test file
