@@ -31,6 +31,7 @@ driver.quit()
 """
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options  # ✅ Add this line
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -41,8 +42,15 @@ import os
 email = os.getenv("SYNC_TOOLS_EMAIL")
 password = os.getenv("SYNC_TOOLS_PASSWORD")
 
-# Initialize WebDriver
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+# ✅ Configure Chrome options to avoid session conflicts
+chrome_options = Options()
+chrome_options.add_argument("--no-sandbox")  # Required for running in GitHub Actions
+chrome_options.add_argument("--headless")  # Run in headless mode to avoid UI issues
+chrome_options.add_argument("--disable-dev-shm-usage")  # Prevent crashes
+chrome_options.add_argument("--user-data-dir=/tmp/chrome-profile")  # ✅ Unique user data directory
+
+# ✅ Initialize WebDriver with Chrome options
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 driver.get("https://app.synctools.io/sign-in")
 driver.maximize_window()
 
@@ -62,5 +70,5 @@ driver.get("https://app.synctools.io/settings/shopify-x-qbo/Configuration")
 # **Step 4: Verify Page Loaded**
 wait.until(EC.presence_of_element_located((By.TAG_NAME, "h1")))  # Adjust as needed
 
-# Close the driver
+# ✅ Close the driver properly
 driver.quit()
