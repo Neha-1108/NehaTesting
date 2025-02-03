@@ -2,6 +2,7 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
 import time
 
 # Initialize WebDriver
@@ -31,44 +32,81 @@ driver.quit()
 """
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options  # ✅ Add this line
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import os
+import time
 
 # Load credentials from environment variables
 email = os.getenv("SYNC_TOOLS_EMAIL")
 password = os.getenv("SYNC_TOOLS_PASSWORD")
 
-# ✅ Configure Chrome options to avoid session conflicts
+# Check if environment variables are None
+if email is None or password is None:
+    raise ValueError("SYNC_TOOLS_EMAIL or SYNC_TOOLS_PASSWORD environment variables are not set.")
+
+# Configure Chrome options to avoid session conflicts and improve stability
 chrome_options = Options()
-chrome_options.add_argument("--no-sandbox")  # Required for running in GitHub Actions
-chrome_options.add_argument("--headless")  # Run in headless mode to avoid UI issues
-chrome_options.add_argument("--disable-dev-shm-usage")  # Prevent crashes
-chrome_options.add_argument("--user-data-dir=/tmp/chrome-profile")  # ✅ Unique user data directory
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--remote-debugging-port=9223")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--headless")  # Remove this line for debugging
+chrome_options.add_argument("--start-maximized")
+chrome_options.add_argument("--disable-extensions")
 
-# ✅ Initialize WebDriver with Chrome options
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-driver.get("https://app.synctools.io/sign-in")
-driver.maximize_window()
+# Initialize the WebDriver with the ChromeDriver
+service = Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=service, options=chrome_options)
 
-wait = WebDriverWait(driver, 10)
+def test_configuration_login():
+    try:
+        # Step 1: Navigate to the sign-in page
+        print("Navigating to sign-in page...")
+        driver.get("https://app.synctools.io/sign-in")
+        print("Navigated to the sign-in page.")
 
-# **Step 1: Login**
-wait.until(EC.visibility_of_element_located((By.ID, "email"))).send_keys(email)
-wait.until(EC.visibility_of_element_located((By.ID, "basic_password"))).send_keys(password)
-wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Sign in')]"))).click()
+        # Log current URL to debug
+        print("Current URL:", driver.current_url)
 
-# **Step 2: Wait for Dashboard**
-wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='ant-layout-sider-children']")))
+        # Wait for email input and login
+        wait = WebDriverWait(driver, 30)  # Increased timeout to 30 seconds
 
-# **Step 3: Redirect to Configuration Page**
-driver.get("https://app.synctools.io/settings/shopify-x-qbo/Configuration")
+        # Wait for email field to be visible and send keys
+        print("Waiting for email field to be visible...")
+        wait.until(EC.visibility_of_element_located((By.ID, "email"))).send_keys(email)
+        print("Email entered")
 
-# **Step 4: Verify Page Loaded**
-wait.until(EC.presence_of_element_located((By.TAG_NAME, "h1")))  # Adjust as needed
+        # Wait for password field and send keys
+        print("Waiting for password field...")
+        wait.until(EC.visibility_of_element_located((By.ID, "basic_password"))).send_keys(password)
+        print("Password entered")
 
-# ✅ Close the driver properly
-driver.quit()
+        # Wait for the sign-in button to be clickable and click it
+        print("Waiting for Sign In button to be clickable...")
+        sign_in_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Sign in')]")))
+        sign_in_button.click()
+        print("Clicked Sign In button")
+
+        # Step 2: Wait for the dashboard or any confirmation
+        print("Waiting for dashboard to load...")
+        wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='ant-layout-sider-children']")))  # Change this according to actual UI
+
+        # Step 3: Redirect to Configuration Page
+        print("Navigating to Configuration Page...")
+        driver.get("https://app.synctools.io/settings/shopify-x-qbo/Configuration")
+        print("Navigated to Configuration Page")
+    
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+    finally:
+        # Wait a little before quitting the driver to observe the state
+        time.sleep(5)
+        driver.quit()
+        print("Driver closed")
+
+# Call the function directly to check if the test works
+test_configuration_login()
