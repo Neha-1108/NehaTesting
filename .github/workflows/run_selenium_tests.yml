@@ -44,7 +44,7 @@ jobs:
 
     - name: Run Selenium Tests
       run: |
-        pytest SyncToolsQBO/test_Configuration.py
+        pytest SyncToolsQBO/test_Configuration.py --alluredir=allure-results  # ✅ Fixed!
 
     - name: Generate Allure Report
       run: |
