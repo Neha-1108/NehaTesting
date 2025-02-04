@@ -1,4 +1,3 @@
-#import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -6,6 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
+import pytest
 
 # Test function for Login and redirect to Configuration page
 def test_configuration_login():
@@ -13,34 +13,37 @@ def test_configuration_login():
     chromedriver_path = ChromeDriverManager().install()
     print(f"ChromeDriver installed at: {chromedriver_path}")
 
-# Create a Service object with the chromedriver path
+    # Create a Service object with the chromedriver path
     service = Service(chromedriver_path)
+    
     # Initialize the WebDriver with the Service object
     driver = webdriver.Chrome(service=service)
 
+    # Step 1: Navigate to the sign-in page
     driver.get("https://app.synctools.io/sign-in")
     driver.maximize_window()
 
     wait = WebDriverWait(driver, 10)
 
-    # **Step 1: Login**
+    # Step 2: Login
     wait.until(EC.presence_of_element_located((By.ID, "email"))).send_keys("neha@satvasolutions.com")
     wait.until(EC.presence_of_element_located((By.ID, "basic_password"))).send_keys("Satva1213#")
     wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Sign in')]"))).click()
 
     time.sleep(10)
 
-    # Waiting for the unique dashboard element to load
+    # Step 3: Waiting for the unique dashboard element to load
     wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='ant-layout-sider-children']")))  # This confirms the dashboard is loaded
 
-    # **Step 3: Redirect to the Users Settings page**
+    # Step 4: Redirect to the Users Settings page
     driver.get("https://app.synctools.io/settings/shopify-x-qbo/Configuration")
 
     time.sleep(10)
 
+    # Close the browser
     driver.quit()
 
-# If you'd like to run the test directly, you can use:
+# If you'd like to run the test directly, you can use pytest.main()
 if __name__ == "__main__":
     pytest.main()
 
