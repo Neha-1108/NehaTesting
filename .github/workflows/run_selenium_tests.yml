@@ -35,7 +35,12 @@ jobs:
         pip install --upgrade pip
         pip install -r requirements.txt  # Install dependencies listed in requirements.txt
         pip install allure-pytest  # Install allure-pytest for generating reports
+        pip install pytest  # Install pytest to run the tests
+
+    - name: Generate Allure Report
+      run: |
+          allure serve allure-results  # Serve the Allure report
 
     - name: Run Selenium Tests
       run: |
-        python SyncToolsQBO/test_Configuration.py  # Run your test file
+        pytest SyncToolsQBO/test_Configuration.py  # Run the test file with pytest
