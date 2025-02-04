@@ -14,10 +14,10 @@ jobs:
 
     steps:
     - name: Check out the repository
-      uses: actions/checkout@v3  # Use latest version
+      uses: actions/checkout@v4  # Updated to v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v4  # Updated to v4
       with:
         python-version: '3.11'  # Set the Python version
 
@@ -51,7 +51,7 @@ jobs:
         allure generate allure-results --clean -o allure-report
 
     - name: Upload Allure Report as Artifact
-      uses: actions/upload-artifact@v3  # Updated to v3
+      uses: actions/upload-artifact@v4  # Updated to v4
       with:
         name: allure-report
         path: allure-report  # Upload the generated Allure report
