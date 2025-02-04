@@ -37,10 +37,15 @@ jobs:
         pip install allure-pytest  # Install allure-pytest for generating reports
         pip install pytest  # Install pytest to run the tests
 
-    - name: Generate Allure Report
+    - name: Install Allure CLI
       run: |
-          allure serve allure-results  # Serve the Allure report
+        wget -qO- https://github.com/allure-framework/allure2/releases/download/2.18.1/allure-2.18.1.tgz | tar xvz -C /opt
+        sudo ln -s /opt/allure-2.18.1/bin/allure /usr/local/bin/allure  # Create a symlink to make allure globally accessible
 
     - name: Run Selenium Tests
       run: |
         pytest SyncToolsQBO/test_Configuration.py  # Run the test file with pytest
+
+    - name: Generate Allure Report
+      run: |
+        allure serve allure-results  # Serve the Allure report
