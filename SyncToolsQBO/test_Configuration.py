@@ -1,11 +1,14 @@
+import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
-import pytest
+import os
+import tempfile
 
 # Test function for Login and redirect to Configuration page
 def test_configuration_login():
@@ -13,29 +16,40 @@ def test_configuration_login():
     chromedriver_path = ChromeDriverManager().install()
     print(f"ChromeDriver installed at: {chromedriver_path}")
 
+    # Create a temporary directory for the user data
+    temp_dir = tempfile.mkdtemp()
+
+    # Configure Chrome options to avoid conflicts
+    chrome_options = Options()
+    chrome_options.add_argument(f"--user-data-dir={temp_dir}")  # Set a unique user data directory
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--remote-debugging-port=9223")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--headless")  # Remove this line for debugging
+
     # Create a Service object with the chromedriver path
     service = Service(chromedriver_path)
     
-    # Initialize the WebDriver with the Service object
-    driver = webdriver.Chrome(service=service)
+    # Initialize the WebDriver with the Service object and Chrome options
+    driver = webdriver.Chrome(service=service, options=chrome_options)
 
-    # Step 1: Navigate to the sign-in page
     driver.get("https://app.synctools.io/sign-in")
     driver.maximize_window()
 
     wait = WebDriverWait(driver, 10)
 
-    # Step 2: Login
+    # Step 1: Login
     wait.until(EC.presence_of_element_located((By.ID, "email"))).send_keys("neha@satvasolutions.com")
     wait.until(EC.presence_of_element_located((By.ID, "basic_password"))).send_keys("Satva1213#")
     wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Sign in')]"))).click()
 
     time.sleep(10)
 
-    # Step 3: Waiting for the unique dashboard element to load
+    # Step 2: Waiting for the unique dashboard element to load
     wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='ant-layout-sider-children']")))  # This confirms the dashboard is loaded
 
-    # Step 4: Redirect to the Users Settings page
+    # Step 3: Redirect to the Users Settings page
     driver.get("https://app.synctools.io/settings/shopify-x-qbo/Configuration")
 
     time.sleep(10)
