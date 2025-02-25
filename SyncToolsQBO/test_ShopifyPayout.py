@@ -1,51 +1,76 @@
+import pytest
+import allure
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
-import time
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-# Initialize the WebDriver (Make sure you have chrome driver installed)
-driver = webdriver.Chrome()
+# Set up WebDriver
+def setup_driver():
+    chrome_options = Options()
+    chrome_options.add_argument("--no-sandbox")
+    driver = webdriver.Chrome(options=chrome_options)
+    return driver
 
-# Initialize ActionChains
-actions = ActionChains(driver)
+@allure.feature("Shopify Payouts")
+@allure.story("Navigate and Open Payout Details")
+@allure.severity(allure.severity_level.CRITICAL)
+def test_shopify_payouts():
+    driver = setup_driver()
+    
+    try:
+        with allure.step("Step 1: Navigate to the login page"):
+            driver.get("https://app.synctools.io/sign-in")
+            driver.maximize_window()
 
-# Step 1: Open the login page
-driver.get("https://app.synctools.io/login")  # Replace with the actual login URL
-driver.maximize_window()
+        with allure.step("Step 2: Enter login credentials and submit"):
+            email = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.ID, "email"))
+            )
+            password = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.ID, "basic_password"))
+            )
 
-# Step 2: Log in (Modify as per your login fields)
-username = driver.find_element(By.ID, "email")  # Replace with the actual name of the email field
-password = driver.find_element(By.ID, "basic_password")  # Replace with the actual name of the password field
+            email.send_keys("neha@satvasolutions.com")
+            password.send_keys("Satva1213#")
+            password.send_keys(Keys.RETURN)
 
-username.send_keys("neha@satvasolutions.com")  # Replace with actual email
-password.send_keys("Satva1213#")  # Replace with actual password
-password.send_keys(Keys.RETURN)  # Press Enter to submit login
+            allure.attach(driver.get_screenshot_as_png(), name="Login Screenshot", attachment_type=allure.attachment_type.PNG)
 
-time.sleep(5)  # Wait for the dashboard to load
+        with allure.step("Step 3: Wait for dashboard and navigate to Shopify Payouts"):
+            WebDriverWait(driver, 15).until(
+                EC.url_to_be("https://app.synctools.io/")
+            )
 
-# Step 3: Click on "Shopify Payouts" from the sidebar
-shopify_payouts = driver.find_element(By.LINK_TEXT, "Shopify Payouts")  # Adjust locator if needed
-shopify_payouts.click()
+            shopify_payouts = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.LINK_TEXT, "Shopify Payouts"))
+            )
+            shopify_payouts.click()
 
-time.sleep(3)  # Wait for the page to load
+        with allure.step("Step 4: Wait for Shopify Payouts page to load and click first payout row"):
+            WebDriverWait(driver, 10).until(
+                EC.url_to_be("https://app.synctools.io/shopify-payouts")
+            )
 
-# Step 4: # Click on the first payout row using the date column
-first_payout = driver.find_element(By.XPATH, "//tr[contains(@class, 'ant-table-row')][1]//td[contains(@class, 'payout-row-not-display')]")
-first_payout.click()
+            first_payout = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//tr[contains(@class, 'ant-table-row')][1]//td[contains(@class, 'payout-row-not-display')]"))
+            )
+            first_payout.click()
 
-time.sleep(3)  # Wait for user to see the content
+            allure.attach(driver.get_screenshot_as_png(), name="Payout Details Screenshot", attachment_type=allure.attachment_type.PNG)
 
-# Scroll down iteratively
-for _ in range(10):  # Adjust range based on page height
-    actions.scroll_by_amount(0, 500).perform()  # Scroll down by 500 pixels
-    time.sleep(1)  # Small delay for smooth scrolling
+        with allure.step("Step 5: Scroll through the payout details"):
+            actions = ActionChains(driver)
 
-# Alternatively, scroll to the bottom using JavaScript after using Actions
-driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            for _ in range(10):  # Adjust range as needed
+                actions.scroll_by_amount(0, 500).perform()  # Scroll down by 500 pixels
+                WebDriverWait(driver, 1)  # Small delay for smooth scrolling
 
+            # Scroll to bottom using JavaScript
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
-time.sleep(3)  # Wait for user to see the content
-
-# Close the browser
-driver.quit()
+    finally:
+        driver.quit()

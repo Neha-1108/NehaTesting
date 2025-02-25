@@ -213,6 +213,7 @@ def test_blank_email_password():
 
         with allure.step("Capture screenshot of error messages"):
             allure.attach(driver.get_screenshot_as_png(), name="Error Screenshot - Blank Fields", attachment_type=allure.attachment_type.PNG)
+ 
 
     finally:
         driver.quit()
