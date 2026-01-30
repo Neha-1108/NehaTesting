@@ -48,8 +48,13 @@ def run_checks():
         print("Login invalid credentials error:", login_invalid_errors or None)
 
         # Register checks
+        page.locator("#newUser").scroll_into_view_if_needed()
         page.locator("#newUser").click()
-        page.wait_for_url("**/register")
+        try:
+            page.wait_for_url("**/register", timeout=5000)
+        except Exception:
+            # Fallback in case the click is intercepted or blocked.
+            page.goto("https://demoqa.com/register", wait_until="domcontentloaded")
         page.wait_for_selector("#firstname")
         page.wait_for_selector("#lastname")
         page.wait_for_selector("#userName")
