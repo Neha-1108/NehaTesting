@@ -1,0 +1,75 @@
+from playwright.sync_api import sync_playwright
+
+
+def _collect_non_empty_texts(locator):
+    texts = []
+    for i in range(locator.count()):
+        text = (locator.nth(i).text_content() or "").strip()
+        if text:
+            texts.append(text)
+    return texts
+
+
+def run_checks():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1280, "height": 2000})
+
+        # Login checks
+        page.goto("https://demoqa.com/login", wait_until="domcontentloaded")
+        page.wait_for_selector("#userName")
+        page.wait_for_selector("#password")
+
+        page.locator("#login").click()
+        page.wait_for_timeout(1000)
+        login_empty_errors = _collect_non_empty_texts(page.locator("#name"))
+        print("Login empty fields error:", login_empty_errors or None)
+
+        page.fill("#userName", "invalid_user")
+        page.fill("#password", "invalid_pass")
+        page.locator("#login").click()
+        page.wait_for_timeout(1000)
+        login_invalid_errors = _collect_non_empty_texts(page.locator("#name"))
+        print("Login invalid credentials error:", login_invalid_errors or None)
+
+        # Register checks
+        page.locator("#newUser").click()
+        page.wait_for_url("**/register")
+        page.wait_for_selector("#firstname")
+        page.wait_for_selector("#lastname")
+        page.wait_for_selector("#userName")
+        page.wait_for_selector("#password")
+
+        page.locator("#register").click()
+        page.wait_for_timeout(1000)
+        register_empty_name_errors = _collect_non_empty_texts(page.locator("#name"))
+        register_empty_output_errors = _collect_non_empty_texts(page.locator("#output"))
+        print(
+            "Register blank fields errors:",
+            {
+                "name": register_empty_name_errors or None,
+                "output": register_empty_output_errors or None,
+            },
+        )
+
+        page.fill("#firstname", "Test")
+        page.fill("#lastname", "User")
+        page.fill("#userName", "test_user_demoqa_123")
+        page.fill("#password", "Test@1234")
+        page.locator("#register").click()
+        page.wait_for_timeout(2000)
+        register_no_captcha_name = _collect_non_empty_texts(page.locator("#name"))
+        register_no_captcha_output = _collect_non_empty_texts(page.locator("#output"))
+        print(
+            "Register without captcha errors:",
+            {
+                "name": register_no_captcha_name or None,
+                "output": register_no_captcha_output or None,
+            },
+        )
+
+        browser.close()
+
+
+if __name__ == "__main__":
+    run_checks()
