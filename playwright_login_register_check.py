@@ -19,7 +19,7 @@ def _wait_for_non_empty_text(page, selector, timeout_ms=2000):
                 return el && el.textContent && el.textContent.trim().length > 0;
             }
             """,
-            selector,
+            arg=selector,
             timeout=timeout_ms,
         )
     except Exception:
