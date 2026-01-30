@@ -7,7 +7,7 @@
 ### Test Environment
 - OS: Linux 6.1.147
 - Browser: Google Chrome 143.0.7499.146 (headless)
-- Automation: Selenium (Python)
+- Automation: Selenium (Python), Playwright 1.57.0 (Python)
 
 ### Test Summary
 Focused on core login and registration form behavior, validation, and error handling.
@@ -88,3 +88,4 @@ Minor UI inconsistency; can reduce clarity and polish.
 ## Notes
 - Registration cannot be completed without reCAPTCHA; testing focused on client-side validation and error handling.
 - No functional errors observed for invalid-login handling (error displays correctly).
+- Playwright run reproduced the same validation gaps and duplicate reCAPTCHA message.
