@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DemoQA Login and Register - QA Bug Report</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        line-height: 1.5;
+        margin: 24px;
+        color: #111;
+      }
+      h1, h2, h3 {
+        margin: 0 0 8px;
+      }
+      h2 {
+        margin-top: 24px;
+      }
+      h3 {
+        margin-top: 16px;
+      }
+      pre {
+        background: #f6f8fa;
+        padding: 12px;
+        overflow-x: auto;
+        border-radius: 6px;
+      }
+      code {
+        font-family: "Courier New", Courier, monospace;
+      }
+      .meta {
+        margin-bottom: 16px;
+      }
+      .severity {
+        font-weight: bold;
+      }
+      .block {
+        margin-bottom: 16px;
+      }
+      .divider {
+        margin: 24px 0;
+        border: 0;
+        border-top: 1px solid #ccc;
+      }
+      ul {
+        margin: 8px 0 0 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>DemoQA Login and Register - QA Bug Report</h1>
+    <div class="meta">
+      <div><strong>Date:</strong> 2026-01-30</div>
+      <div><strong>Target:</strong> https://demoqa.com/login and https://demoqa.com/register</div>
+      <div><strong>Environment:</strong> Linux 6.1.147, curl (API-backed validation)</div>
+    </div>
+ 
+    <h2>Scope</h2>
+    <p>
+      The UI pages are a SPA served from <code>/login</code> and
+      <code>/register</code>. In this environment I validated the backend
+      endpoints used by the UI (Account APIs) to cover login and
+      registration behavior.
+    </p>
+ 
+    <h3>Endpoints tested</h3>
+    <ul>
+      <li>POST https://demoqa.com/Account/v1/User (register)</li>
+      <li>POST https://demoqa.com/Account/v1/GenerateToken (auth token)</li>
+      <li>POST https://demoqa.com/Account/v1/Login (login)</li>
+    </ul>
+ 
+    <h3>Test data</h3>
+    <ul>
+      <li>Valid password: <code>Aa1!aaaa</code> (meets policy)</li>
+      <li>Invalid password: <code>abc</code></li>
+      <li>New user: <code>qa_demo_&lt;timestamp&gt;</code></li>
+    </ul>
+ 
+    <h2>Summary</h2>
+    <p>
+      Registration succeeds with a valid password and fails with a weak
+      password with a clear error message. However, several security and
+      API contract issues were found in the login/token flow.
+    </p>
+ 
+    <hr class="divider" />
+ 
+    <h2>Bugs</h2>
+ 
+    <h3>1) Plaintext password exposed in login response and JWT payload</h3>
+    <div class="block">
+      <div class="severity">Severity: Critical (Security)</div>
+      <div><strong>Endpoint:</strong> POST /Account/v1/Login</div>
+ 
+      <h4>Steps to reproduce</h4>
+      <pre><code>curl -X POST https://demoqa.com/Account/v1/User \
+  -H "Content-Type: application/json" \
+  -d '{"userName":"qa_demo_1769756223","password":"Aa1!aaaa"}'
+ 
+curl -X POST https://demoqa.com/Account/v1/Login \
+  -H "Content-Type: application/json" \
+  -d '{"userName":"qa_demo_1769756223","password":"Aa1!aaaa"}'</code></pre>
+ 
+      <h4>Actual result</h4>
+      <ul>
+        <li>Response body includes the plaintext password.</li>
+        <li>The JWT payload also contains the plaintext password when decoded.</li>
+      </ul>
+ 
+      <h4>Expected result</h4>
+      <ul>
+        <li>Password should never be returned in any response body.</li>
+        <li>JWT payload should not include sensitive credentials.</li>
+      </ul>
+ 
+      <h4>Impact</h4>
+      <p>
+        Credentials are exposed to any client, network capture, logs, and
+        third-party tooling. This is a critical security leak.
+      </p>
+    </div>
+ 
+    <h3>2) Login returns HTTP 200 with empty body on invalid credentials</h3>
+    <div class="block">
+      <div class="severity">Severity: Medium</div>
+      <div><strong>Endpoint:</strong> POST /Account/v1/Login</div>
+ 
+      <h4>Steps to reproduce</h4>
+      <pre><code>curl -i -X POST https://demoqa.com/Account/v1/Login \
+  -H "Content-Type: application/json" \
+  -d '{"userName":"qa_demo_1769756223","password":"BadPass1!"}'</code></pre>
+ 
+      <h4>Actual result</h4>
+      <ul>
+        <li>HTTP status: 200 OK</li>
+        <li>Empty response body</li>
+      </ul>
+ 
+      <h4>Expected result</h4>
+      <ul>
+        <li>HTTP status should indicate auth failure (401/403)</li>
+        <li>Response should include a clear error message</li>
+      </ul>
+ 
+      <h4>Impact</h4>
+      <p>
+        Clients cannot reliably detect failed authentication and may treat
+        the request as success based on HTTP 200.
+      </p>
+    </div>
+ 
+    <h3>3) GenerateToken returns HTTP 200 on failed authentication</h3>
+    <div class="block">
+      <div class="severity">Severity: Medium</div>
+      <div><strong>Endpoint:</strong> POST /Account/v1/GenerateToken</div>
+ 
+      <h4>Steps to reproduce</h4>
+      <pre><code>curl -i -X POST https://demoqa.com/Account/v1/GenerateToken \
+  -H "Content-Type: application/json" \
+  -d '{"userName":"qa_demo_1769756223","password":"BadPass1!"}'</code></pre>
+ 
+      <h4>Actual result</h4>
+      <ul>
+        <li>HTTP status: 200 OK</li>
+        <li>
+          Body: {"token":null,"expires":null,"status":"Failed","result":"User authorization failed."}
+        </li>
+      </ul>
+ 
+      <h4>Expected result</h4>
+      <ul>
+        <li>HTTP status should be 401/403 for invalid credentials</li>
+        <li>Error response should be consistent with login failure handling</li>
+      </ul>
+ 
+      <h4>Impact</h4>
+      <p>
+        Error handling is inconsistent and can confuse client-side logic,
+        leading to false positives in auth flows.
+      </p>
+    </div>
+ 
+    <hr class="divider" />
+ 
+    <h2>Notes</h2>
+    <p>
+      UI verification (manual interaction) was not executed here because the
+      environment does not provide a browser; the Account API results are
+      expected to reflect the login/register behavior used by the UI.
+    </p>
+    <p>
+      Registration password validation behaves correctly (400 + clear
+      message) when the password does not meet the policy.
+    </p>
+  </body>
+</html>
